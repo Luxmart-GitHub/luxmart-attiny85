@@ -8,6 +8,16 @@
 int value = 0;
 const int step = 10;
 
+enum Command
+{
+  CommandStepUp = 'u',
+  CommandStepDown = 'd',
+  CommandSetValue = 'w',
+  CommandGetValue = 'r',
+  CommandSetMax = 'm',
+  CommandSetMin = '0',
+};
+
 // We receive from the serial either commands or values,
 // because we allow user to directly specify a value of PWM level.
 enum CommandMode
@@ -40,33 +50,33 @@ void loop()
 			switch (rc)
 			{
 				// Keys for incrementing and decrementing by a fixed step
-			case 'u' :
+			case CommandStepUp :
 				value += step;
 				value = min(255, value);
 				analogWrite(PWM_PIN, value);
 				break;
-			case 'd' :
+			case CommandStepDown :
 				value -= step;
 				value = max(0, value);
 				analogWrite(PWM_PIN, value);
 				break;
 				// Key for setting a specific value
-			case 'w':
+			case CommandSetValue :
 				// Switch serial interpretation to value mode.
 				mode = ReceiveValue;
 				break;
 				// Key for reading the value
-			case 'r':
+			case CommandGetValue :
 				// Indicate to the user that a value is coming.
 				serial.write('v');
 				serial.write(value);
 				break;
 				// Keys for setting to minimum and maximum value
-			case 'm' :
+			case CommandSetMax :
 				value = 255;
 				analogWrite(PWM_PIN, value);
 				break;
-			case '0' :
+			case CommandSetMin :
 				value = 0;
 				analogWrite(PWM_PIN, value);
 				break;
