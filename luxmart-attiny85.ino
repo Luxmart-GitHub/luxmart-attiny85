@@ -73,8 +73,7 @@ void loop()
 			}
 			break;
 		case ReceiveValue:
-			value = rc;
-			value = *(reinterpret_cast<unsigned char*>(&value));
+			value = *(reinterpret_cast<unsigned char*>(&rc));
 			analogWrite(PWM_PIN, value);
 			// Value received; switc serial back to command mode.
 			mode = ReceiveCommand;
