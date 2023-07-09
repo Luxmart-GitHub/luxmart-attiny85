@@ -8,53 +8,77 @@
 int value = 0;
 const int step = 10;
 
+// We receive from the serial either commands or values,
+// because we allow user to directly specify a value of PWM level.
+enum CommandMode
+{
+	ReceiveCommand = 0,
+	ReceiveValue
+};
+
+// This flag controls the current serial interpretation:
+// a command or a value.
+CommandMode mode = ReceiveCommand;
+
 SoftSerial serial(RX_PIN, TX_PIN);
 
 void setup()
 {
-  serial.begin(9600);
-  pinMode(PWM_PIN, OUTPUT);
-  analogWrite(PWM_PIN, value);
+	serial.begin(9600);
+	pinMode(PWM_PIN, OUTPUT);
+	analogWrite(PWM_PIN, value);
 }
 
 void loop()
 {
-  if (serial.available())
-  {
-    char rc = serial.read();
-    switch (rc)
-    {
-      // Keys for incrementing and decrementing by a fixed step
-    case 'u' :
-      value += step;
-      value = min(255, value);
-      analogWrite(PWM_PIN, value);
-      break;
-    case 'd' :
-      value -= step;
-      value = max(0, value);
-      analogWrite(PWM_PIN, value);
-      break;
-      // Key for setting a specific value
-    case 'w':
-      value = serial.read();
-      value = *(reinterpret_cast<unsigned char*>(&value));
-      analogWrite(PWM_PIN, value);
-      break;
-      // Key for reading the value
-    case 'r':
-      serial.write('w');
-      serial.write(value);
-      break;
-      // Keys for setting to minimum and maximum value
-    case 'm' :
-      value = 255;
-      analogWrite(PWM_PIN, value);
-      break;
-    case '0' :
-      value = 0;
-      analogWrite(PWM_PIN, value);
-      break;
-    }
-  }
+	if (serial.available())
+	{
+		char rc = serial.read();
+		switch (mode)
+		{
+		case ReceiveCommand:
+			switch (rc)
+			{
+				// Keys for incrementing and decrementing by a fixed step
+			case 'u' :
+				value += step;
+				value = min(255, value);
+				analogWrite(PWM_PIN, value);
+				break;
+			case 'd' :
+				value -= step;
+				value = max(0, value);
+				analogWrite(PWM_PIN, value);
+				break;
+				// Key for setting a specific value
+			case 'w':
+				// Switch serial interpretation to value mode.
+				mode = ReceiveValue;
+				break;
+				// Key for reading the value
+			case 'r':
+				// Indicate to the user that a value is coming.
+				serial.write('v');
+				serial.write(value);
+				break;
+				// Keys for setting to minimum and maximum value
+			case 'm' :
+				value = 255;
+				analogWrite(PWM_PIN, value);
+				break;
+			case '0' :
+				value = 0;
+				analogWrite(PWM_PIN, value);
+				break;
+			}
+			break;
+		case ReceiveValue:
+			value = rc;
+			value = *(reinterpret_cast<unsigned char*>(&value));
+			analogWrite(PWM_PIN, value);
+			// Value received; switc serial back to command mode.
+			mode = ReceiveCommand;
+			break;
+		}
+	}
 }
