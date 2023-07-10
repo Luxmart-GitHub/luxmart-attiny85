@@ -5,17 +5,19 @@
 #define RX_PIN 1
 #define TX_PIN 3
 
+#define BAUD_RATE 9600
+
 int value = 0;
 const int step = 10;
 
 enum Command
 {
-  CommandStepUp = 'u',
-  CommandStepDown = 'd',
-  CommandSetValue = 'w',
-  CommandGetValue = 'r',
-  CommandSetMax = 'm',
-  CommandSetMin = '0',
+	CommandStepUp = 'u',
+	CommandStepDown = 'd',
+	CommandSetValue = 'w',
+	CommandGetValue = 'r',
+	CommandSetMax = 'm',
+	CommandSetMin = '0',
 };
 
 // We receive from the serial either commands or values,
@@ -34,7 +36,7 @@ SoftSerial serial(RX_PIN, TX_PIN);
 
 void setup()
 {
-	serial.begin(9600);
+	serial.begin(BAUD_RATE);
 	pinMode(PWM_PIN, OUTPUT);
 	analogWrite(PWM_PIN, value);
 }
