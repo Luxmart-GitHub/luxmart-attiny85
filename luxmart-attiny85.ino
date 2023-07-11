@@ -1,24 +1,14 @@
 #include <SoftSerial.h>
 #include <TinyPinChange.h>
 
+#include "api/pwm_controller_commands.h"
+
 #define PWM_PIN 4
 #define RX_PIN 1
 #define TX_PIN 3
 
-#define BAUD_RATE 9600
-
 int value = 0;
 const int step = 10;
-
-enum Command
-{
-	CommandStepUp = 'u',
-	CommandStepDown = 'd',
-	CommandSetValue = 'w',
-	CommandGetValue = 'r',
-	CommandSetMax = 'm',
-	CommandSetMin = '0',
-};
 
 // We receive from the serial either commands or values,
 // because we allow user to directly specify a value of PWM level.
@@ -30,15 +20,19 @@ enum CommandMode
 
 // This flag controls the current serial interpretation:
 // a command or a value.
-CommandMode mode = ReceiveCommand;
+static CommandMode mode = ReceiveCommand;
 
-SoftSerial serial(RX_PIN, TX_PIN);
+static SoftSerial serial(RX_PIN, TX_PIN);
 
 void setup()
 {
 	serial.begin(BAUD_RATE);
 	pinMode(PWM_PIN, OUTPUT);
 	analogWrite(PWM_PIN, value);
+	
+	// TODO Button pin mode
+	
+	// TODO LED1 pin mode
 }
 
 void loop()
@@ -81,6 +75,15 @@ void loop()
 			case CommandSetMin :
 				value = 0;
 				analogWrite(PWM_PIN, value);
+				break;
+			case CommandBlink :
+				// TODO
+				break;
+			case CommandReboot :
+				// TODO
+				break;
+			case CommandGetState :
+				// TODO
 				break;
 			}
 			break;
