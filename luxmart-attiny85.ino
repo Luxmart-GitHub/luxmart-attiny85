@@ -3,6 +3,14 @@
 
 #include "api/pwm_controller_commands.h"
 
+//#define DEBUG
+
+#ifdef DEBUG
+#define DBGLOG(msg) serial.println(msg)
+#else
+#define DBGLOG(msg) do {} while (0)
+#endif
+
 #define LED_PIN 0
 #define PWM_PIN 4
 #define BTN_PIN 2
@@ -54,22 +62,53 @@ static void process_blink()
   }
 }
 
+static ButtonState button_state = ButtonUnpressed;
+
 static void process_button()
 {
-  // TODO
-  //digitalRead(BTN_PIN); // HIGH or LOW
+  static int buttonState = HIGH;
+  static int previousButtonState = HIGH;
+  static unsigned long buttonPressTime = 0;
+  static const unsigned long longPressDuration = 4000;  // msec
+
+  // Read the state of the button
+  buttonState = digitalRead(BTN_PIN);
+
+  // Check if button is pressed (LOW), and was not pressed before.
+  if (buttonState == LOW && previousButtonState == HIGH)
+  {
+    buttonPressTime = millis();  // Record the current time
+  }
+  // Check if button in released (HIGH), and was pressed before.
+  else if (buttonState == HIGH && previousButtonState == LOW)
+  {
+    // Check for short press (less than longPressDuration)
+    if (millis() - buttonPressTime < longPressDuration)
+    {
+      button_state = ButtonPressed;
+      DBGLOG("Short press");
+    }
+    else // Check for long press (greater than or equal to longPressDuration)
+    {
+      button_state = ButtonLongPressed;
+      DBGLOG("Long press");
+    }
+  }
+
+  // Store the current state for the next iteration
+  previousButtonState = buttonState;
 }
 
-static void receive_value(char value)
+static void receive_value(char rc)
 {
-  analogWrite(PWM_PIN, *(reinterpret_cast<unsigned char*>(&value)));
+  DBGLOG("receive_value()");
+  value = *reinterpret_cast<unsigned char*>(&rc);
+  analogWrite(PWM_PIN, value);
 }
-
-void (*callback)(char);
 
 static void receive_blink_mode(char mode)
 {
-  // TODO Use ^XOR blinker
+  DBGLOG("receive_blink_mode()");
   switch(mode)
   {
   case BlinkOff :
@@ -114,6 +153,8 @@ static void receive_blink_mode(char mode)
     break;
   }
 }
+
+static void (*callback)(char);
 
 void loop()
 {
@@ -168,13 +209,19 @@ void loop()
 				// TODO
 				break;
 			case CommandGetState :
-				// TODO
+        // Report the button state
+        serial.write('s');
+				serial.write(button_state);
 				break;
+      case CommandClearState :
+        // Clear the button state
+        button_state = ButtonUnpressed;
+        break;
 			}
 			break;
 		case ReceiveValue:
-			callback(rc);
-			// Value received; switc serial back to command mode.
+			(*callback)(rc);
+			// Value received; switch serial back to command mode.
 			mode = ReceiveCommand;
 			break;
 		}
